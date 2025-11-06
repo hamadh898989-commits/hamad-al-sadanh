@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>بنك أسئلة الكيمياء - المخاليط والعناصر والمركبات</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* ... (كل الأنماط السابقة تبقى كما هي) ... */
+        
+        /* شاشة الألغاز */
+        #puzzles-screen {
+            display: none;
+        }
+        
+        .puzzles-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .puzzles-counter {
+            font-size: 1.2rem;
+        }
+        
+        .puzzle-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .puzzle-text {
+            font-size: 1.4rem;
+            margin-bottom: 25px;
+            line-height: 1.6;
+            text-align: center;
+        }
+        
+        .puzzle-options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .puzzle-option {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 18px;
+            border-radius: 12px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            font-size: 1.1rem;
+            transition: all 0.3s;
+        }
+        
+        .puzzle-option:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateX(-5px);
+        }
+        
+        .puzzle-option.selected {
+            background: rgba(26, 115, 232, 0.3);
+            border: 2px solid #1a73e8;
+        }
+        
+        .puzzle-option.correct {
+            background: rgba(52, 168, 83, 0.3);
+            border: 2px solid #34a853;
+        }
+        
+        .puzzle-option.incorrect {
+            background: rgba(234, 67, 53, 0.3);
+            border: 2px solid #ea4335;
+        }
+        
+        .puzzle-feedback {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            display: none;
+            font-size: 1rem;
+        }
+        
+        .puzzle-feedback.correct {
+            background: rgba(52, 168, 83, 0.2);
+            border: 1px solid #34a853;
+            display: block;
+        }
+        
+        .puzzle-feedback.incorrect {
+            background: rgba(234, 67, 53, 0.2);
+            border: 1px solid #ea4335;
+            display: block;
+        }
+        
+        .puzzle-navigation {
+            display: flex;
+            justify-content: center;
+            margin-top: 30px;
+        }
+
+        /* قسم التغذية الراجعة النهائية */
+        .final-feedback {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 20px;
+            margin-top: 30px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .feedback-title {
+            font-size: 2rem;
+            margin-bottom: 20px;
+            color: var(--accent-gold);
+            text-align: center;
+            border-bottom: 2px solid var(--accent-gold);
+            padding-bottom: 15px;
+        }
+        
+        .questions-review {
+            max-height: 500px;
+            overflow-y: auto;
+            padding: 15px;
+        }
+        
+        .question-review {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            border-left: 4px solid transparent;
+        }
+        
+        .question-review.correct {
+            border-left-color: var(--success-green);
+        }
+        
+        .question-review.incorrect {
+            border-left-color: var(--error-red);
+        }
+        
+        .review-question {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            color: #fff;
+        }
+        
+        .review-answer {
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .review-correct {
+            color: var(--success-green);
+            font-weight: bold;
+        }
+        
+        .review-explanation {
+            font-size: 1rem;
+            color: #a8d0ff;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 8px;
+            border-right: 3px solid var(--accent-gold);
+        }
+    </style>
+</head>
+<body>
+    <!-- النجوم المتحركة -->
+    <div class="stars-container" id="stars-container"></div>
+    
+    <!-- الفقاعات المتحركة -->
+    <div class="bubbles-container" id="bubbles-container"></div>
+    
+    <div class="container">
+        <!-- شاشة البداية -->
+        <div id="start-screen">
+            <!-- ... (المحتوى السابق) ... -->
+        </div>
+        
+        <!-- شاشة الألغاز -->
+        <div id="puzzles-screen">
+            <div class="puzzles-header">
+                <button class="nav-btn" id="puzzles-back-btn">العودة للرئيسية</button>
+                <div class="puzzles-counter" id="puzzles-counter">اللغز 1 من 5</div>
+            </div>
+            
+            <div class="puzzle-card">
+                <div class="puzzle-text" id="puzzle-text"></div>
+                
+                <div class="puzzle-options" id="puzzle-options"></div>
+                
+                <div class="puzzle-feedback" id="puzzle-feedback"></div>
+            </div>
+            
+            <div class="puzzle-navigation">
+                <button class="nav-btn" id="puzzle-next-btn">
+                    التالي
+                </button>
+            </div>
+        </div>
+        
+        <!-- شاشة الأسئلة -->
+        <div id="quiz-screen">
+            <!-- ... (المحتوى السابق) ... -->
+        </div>
+
+        <!-- شاشة النتائج -->
+        <div id="results-screen">
+            <div class="results-card">
+                <div class="celebration" id="celebration">🎉</div>
+                <h1>أحسنت!</h1>
+                <div class="score" id="final-score"></div>
+                <div class="score-details" id="score-details"></div>
+                <div class="feedback-message" id="feedback-message"></div>
+                <button class="btn" id="restart-btn">
+                    <i class="fas fa-redo"></i> إعادة الاختبار
+                </button>
+            </div>
+            
+            <!-- التغذية الراجعة النهائية -->
+            <div class="final-feedback">
+                <h3 class="feedback-title"><i class="fas fa-chart-bar"></i> التغذية الراجعة</h3>
+                <div class="questions-review" id="questions-review"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // بيانات الألغاز الكيميائية
+        const puzzles = [
+            {
+                question: "أنا عنصر غازي، خفيف جدًا، أستخدم في البالونات والطيران. ما اسمي؟",
+                options: ["الأكسجين", "الهيدروجين", "الهيليوم"],
+                correctAnswer: 1,
+                explanation: "الهيدروجين هو أخف العناصر ويستخدم في المناطيد والبالونات"
+            },
+            {
+                question: "مركب مائي معروف، صيغته H₂O --- ما اسمه الشائع؟",
+                options: ["الماء", "الكحول", "حمض الكبريتيك"],
+                correctAnswer: 0,
+                explanation: "الماء هو المركب الأكثر شيوعًا وصيغته الكيميائية H₂O"
+            },
+            {
+                question: "أنا معدن لامع يُستخدم في صنع المجوهرات والساعات، رمزي Au. من أنا؟",
+                options: ["الفضة", "الذهب", "النحاس"],
+                correctAnswer: 1,
+                explanation: "الذهب معدن ثمين رمزه الكيميائي Au ويستخدم في المجوهرات"
+            },
+            {
+                question: "غاز عديم اللون والرائحة يُستخدم في المصابيح النيونية. ما اسمي؟",
+                options: ["النيون", "الهيدروجين", "الأكسجين"],
+                correctAnswer: 0,
+                explanation: "النيون غاز نبيل يستخدم في الإضاءة والإعلانات"
+            },
+            {
+                question: "مركب يتكون من صوديوم وكلور --- يُستخدم في الطعام.",
+                options: ["ملح الطعام", "السكر", "الخل"],
+                correctAnswer: 0,
+                explanation: "ملح الطعام هو كلوريد الصوديوم (NaCl)"
+            }
+        ];
+
+        // متغيرات الألغاز
+        let currentPuzzle = 0;
+        let puzzleAnswers = new Array(puzzles.length).fill(null);
+
+        // دالة لعرض اللغز الحالي
+        function displayPuzzle() {
+            const puzzle = puzzles[currentPuzzle];
+            document.getElementById('puzzle-text').textContent = puzzle.question;
+            document.getElementById('puzzles-counter').textContent = `اللغز ${currentPuzzle + 1} من ${puzzles.length}`;
+            
+            const optionsContainer = document.getElementById('puzzle-options');
+            optionsContainer.innerHTML = '';
+            
+            puzzle.options.forEach((option, index) => {
+                const optionElement = document.createElement('div');
+                optionElement.className = 'puzzle-option';
+                if (puzzleAnswers[currentPuzzle] === index) {
+                    optionElement.classList.add('selected');
+                }
+                optionElement.textContent = option;
+                optionElement.addEventListener('click', () => selectPuzzleOption(index));
+                optionsContainer.appendChild(optionElement);
+            });
+            
+            document.getElementById('puzzle-feedback').style.display = 'none';
+        }
+
+        // دالة لتحديد خيار اللغز
+        function selectPuzzleOption(index) {
+            puzzleAnswers[currentPuzzle] = index;
+            const puzzle = puzzles[currentPuzzle];
+            const feedback = document.getElementById('puzzle-feedback');
+            
+            // إظهار الإجابة الصحيحة والخاطئة مباشرة
+            const options = document.querySelectorAll('.puzzle-option');
+            options.forEach((opt, i) => {
+                if (i === puzzle.correctAnswer) {
+                    opt.classList.add('correct');
+                } else if (i === index && i !== puzzle.correctAnswer) {
+                    opt.classList.add('incorrect');
+                }
+            });
+            
+            if (index === puzzle.correctAnswer) {
+                feedback.textContent = `إجابة صحيحة! ${puzzle.explanation}`;
+                feedback.className = 'puzzle-feedback correct';
+            } else {
+                feedback.textContent = `إجابة خاطئة! ${puzzle.explanation}`;
+                feedback.className = 'puzzle-feedback incorrect';
+            }
+            
+            feedback.style.display = 'block';
+        }
+
+        // دالة إنهاء الاختبار مع التغذية الراجعة المحسنة
+        function finishQuiz() {
+            clearInterval(timer);
+            
+            let correctCount = 0;
+            questions.forEach((question, index) => {
+                if (userAnswers[index] === question.correctAnswer) {
+                    correctCount++;
+                }
+            });
+            
+            const score = Math.round((correctCount / questions.length) * 100);
+            
+            document.getElementById('final-score').textContent = `${score}%`;
+            document.getElementById('score-details').textContent = `إجابات صحيحة: ${correctCount} من ${questions.length}`;
+            
+            let feedbackMessage = "";
+            if (score >= 90) {
+                feedbackMessage = "ممتاز! لديك معرفة قوية في الكيمياء.";
+                document.getElementById('celebration').textContent = "🏆";
+            } else if (score >= 70) {
+                feedbackMessage = "جيد جدًا! لديك فهم جيد للمفاهيم الأساسية.";
+                document.getElementById('celebration').textContent = "🎉";
+            } else if (score >= 50) {
+                feedbackMessage = "مقبول! تحتاج إلى مراجعة بعض المفاهيم.";
+                document.getElementById('celebration').textContent = "👍";
+            } else {
+                feedbackMessage = "يحتاج إلى تحسين! راجع دروس الكيمياء مرة أخرى.";
+                document.getElementById('celebration').textContent = "📚";
+            }
+            
+            document.getElementById('feedback-message').textContent = feedbackMessage;
+            
+            // عرض التغذية الراجعة النهائية
+            const questionsReview = document.getElementById('questions-review');
+            questionsReview.innerHTML = '';
+            
+            questions.forEach((question, index) => {
+                const reviewElement = document.createElement('div');
+                reviewElement.className = 'question-review';
+                
+                if (userAnswers[index] === question.correctAnswer) {
+                    reviewElement.classList.add('correct');
+                } else {
+                    reviewElement.classList.add('incorrect');
+                }
+                
+                const questionText = document.createElement('div');
+                questionText.className = 'review-question';
+                questionText.textContent = `${index + 1}. ${question.question}`;
+                reviewElement.appendChild(questionText);
+                
+                const userAnswer = document.createElement('div');
+                userAnswer.className = 'review-answer';
+                userAnswer.textContent = `إجابتك: ${userAnswers[index] !== null ? question.options[userAnswers[index]] : 'لم تجب'}`;
+                reviewElement.appendChild(userAnswer);
+                
+                const correctAnswer = document.createElement('div');
+                correctAnswer.className = 'review-answer review-correct';
+                correctAnswer.textContent = `الإجابة الصحيحة: ${question.options[question.correctAnswer]}`;
+                reviewElement.appendChild(correctAnswer);
+                
+                const explanation = document.createElement('div');
+                explanation.className = 'review-explanation';
+                explanation.textContent = question.explanation;
+                reviewElement.appendChild(explanation);
+                
+                questionsReview.appendChild(reviewElement);
+            });
+            
+            document.getElementById('quiz-screen').style.display = 'none';
+            document.getElementById('results-screen').style.display = 'block';
+        }
+
+        // تهيئة التطبيق
+        function init() {
+            createStars();
+            createBubbles();
+            
+            // أحداث الاختبار الرئيسي
+            document.getElementById('student-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                studentName = document.getElementById('student-name').value;
+                studentSection = document.getElementById('student-section').value;
+                
+                if (!studentName || !studentSection) {
+                    alert('يرجى ملء جميع الحقول المطلوبة.');
+                    return;
+                }
+                
+                document.getElementById('student-info').textContent = `${studentName} - الشعبة ${studentSection}`;
+                
+                document.getElementById('start-screen').style.display = 'none';
+                document.getElementById('quiz-screen').style.display = 'block';
+                
+                displayQuestion();
+                startTimer();
+            });
+
+            // أحداث الألغاز
+            document.getElementById('puzzles-btn').addEventListener('click', function() {
+                document.getElementById('start-screen').style.display = 'none';
+                document.getElementById('puzzles-screen').style.display = 'block';
+                displayPuzzle();
+            });
+
+            document.getElementById('puzzles-back-btn').addEventListener('click', function() {
+                document.getElementById('puzzles-screen').style.display = 'none';
+                document.getElementById('start-screen').style.display = 'block';
+            });
+
+            document.getElementById('puzzle-next-btn').addEventListener('click', function() {
+                if (currentPuzzle < puzzles.length - 1) {
+                    currentPuzzle++;
+                    displayPuzzle();
+                } else {
+                    // إذا انتهت الألغاز، العودة للشاشة الرئيسية
+                    document.getElementById('puzzles-screen').style.display = 'none';
+                    document.getElementById('start-screen').style.display = 'block';
+                    currentPuzzle = 0; // إعادة تعيين للألغاز
+                }
+            });
+
+            // أحداث التنقل في الاختبار
+            document.getElementById('prev-btn').addEventListener('click', function() {
+                if (currentQuestion > 0) {
+                    currentQuestion--;
+                    displayQuestion();
+                }
+            });
+
+            document.getElementById('next-btn').addEventListener('click', function() {
+                // التحقق من وجود إجابة
+                if (userAnswers[currentQuestion] === null) {
+                    document.getElementById('warning-message').style.display = 'block';
+                    return;
+                }
+                
+                if (currentQuestion < questions.length - 1) {
+                    currentQuestion++;
+                    displayQuestion();
+                } else {
+                    finishQuiz();
+                }
+            });
+
+            // إعادة الاختبار
+            document.getElementById('restart-btn').addEventListener('click', function() {
+                currentQuestion = 0;
+                userAnswers = new Array(questions.length).fill(null);
+                timeLeft = 40 * 60;
+                document.getElementById('timer').textContent = '40:00';
+                
+                document.getElementById('results-screen').style.display = 'none';
+                document.getElementById('start-screen').style.display = 'block';
+            });
+        }
+
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
